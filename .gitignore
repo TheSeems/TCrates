@@ -1,0 +1,4 @@
+# Project exclude paths
+/tcrates-api/target/
+/tcrates-common/target/
+/tcrates-spigot/target/
