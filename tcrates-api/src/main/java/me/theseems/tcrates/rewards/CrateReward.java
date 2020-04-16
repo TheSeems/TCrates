@@ -1,5 +1,7 @@
 package me.theseems.tcrates.rewards;
 
+import me.theseems.tcrates.CrateMeta;
+
 import java.util.UUID;
 
 public interface CrateReward {
@@ -16,4 +18,8 @@ public interface CrateReward {
    * @return name
    */
   String getName();
+
+  CrateMeta getMeta();
+
+  void setMeta(CrateMeta meta);
 }

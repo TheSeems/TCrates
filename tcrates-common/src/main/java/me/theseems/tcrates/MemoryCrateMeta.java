@@ -1,13 +1,10 @@
 package me.theseems.tcrates;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-@JsonIgnoreProperties(value = {"keys"})
 public class MemoryCrateMeta implements CrateMeta {
   private Map<String, Object> map;
 
@@ -62,5 +59,16 @@ public class MemoryCrateMeta implements CrateMeta {
 
   public void setMap(Map<String, Object> map) {
     this.map = map;
+  }
+
+  public static MemoryCrateMeta to(CrateMeta meta) {
+    MemoryCrateMeta memoryCrateMeta = new MemoryCrateMeta();
+    for (String key : meta.getKeys()) {
+      Optional<Object> objectOptional = meta.get(key);
+      if (!objectOptional.isPresent()) continue;
+
+      memoryCrateMeta.set(key, objectOptional.get());
+    }
+    return memoryCrateMeta;
   }
 }

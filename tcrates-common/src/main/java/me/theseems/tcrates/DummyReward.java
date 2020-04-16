@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 public class DummyReward implements CrateReward {
   private String name;
+  private MemoryCrateMeta meta;
 
   public DummyReward(String name) {
     this.name = name;
@@ -20,5 +21,15 @@ public class DummyReward implements CrateReward {
   @Override
   public String getName() {
     return "Dummy<" + name + ">";
+  }
+
+  @Override
+  public CrateMeta getMeta() {
+    return meta;
+  }
+
+  @Override
+  public void setMeta(CrateMeta meta) {
+    this.meta = MemoryCrateMeta.to(meta);
   }
 }

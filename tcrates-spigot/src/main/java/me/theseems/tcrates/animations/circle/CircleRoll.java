@@ -126,7 +126,7 @@ public class CircleRoll {
               CircleCrateAnimation.getIntProperty(this, "particle_count", 1),
               CircleCrateAnimation.getDoubleProperty(this, "particle_v", .1),
               CircleCrateAnimation.getDoubleProperty(this, "particle_v1", .1),
-              CircleCrateAnimation.getDoubleProperty(this, "particle_V2", .1),
+              CircleCrateAnimation.getDoubleProperty(this, "particle_v2", .1),
               CircleCrateAnimation.getDoubleProperty(this, "particle_v3", .1),
               new Particle.DustOptions(
                   color, CircleCrateAnimation.getIntProperty(this, "particle_size", 1)));

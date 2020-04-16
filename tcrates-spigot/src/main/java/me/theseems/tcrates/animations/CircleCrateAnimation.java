@@ -6,14 +6,12 @@ import me.theseems.tcrates.CrateAnimation;
 import me.theseems.tcrates.TCratesAPI;
 import me.theseems.tcrates.TCratesPlugin;
 import me.theseems.tcrates.animations.circle.CircleRoll;
-import me.theseems.tcrates.events.CrateOpenEvent;
 import me.theseems.tcrates.utils.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 
@@ -58,15 +56,6 @@ public class CircleCrateAnimation implements CrateAnimation, Listener {
     players = new ConcurrentHashMap<>();
     rewardMap = new ConcurrentHashMap<>();
     Bukkit.getScheduler().runTaskTimer(TCratesPlugin.getPlugin(), this::run, 2, 2);
-    Bukkit.getServer().getPluginManager().registerEvents(this, TCratesPlugin.getPlugin());
-  }
-
-  @EventHandler
-  public void onOpen(CrateOpenEvent e) {
-    if (!e.isCancelled() && players.containsKey(e.getPlayerUUID())) {
-      e.getPlayer().sendMessage("§7Пожалуйста, дождитесь окончания октрытия");
-      e.setCancelled(true);
-    }
   }
 
   private void generateState(CircleRoll circleRoll) {
@@ -159,6 +148,7 @@ public class CircleCrateAnimation implements CrateAnimation, Listener {
   public void run() {
     players.forEach(
         (uuid, circleRoll) -> {
+          Bukkit.getPlayer(uuid).sendMessage("in circle roll " + players.toString());
           int pulsePeriod = getIntProperty(circleRoll, "pulse_period", PULSE_PERIOD);
           int generateTime = getIntProperty(circleRoll, "generate_time", GENERATE_TIME);
           int generatePeriod = getIntProperty(circleRoll, "generate_period", GENERATE_PERIOD);

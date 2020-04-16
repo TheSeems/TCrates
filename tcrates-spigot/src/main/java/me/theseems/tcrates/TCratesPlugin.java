@@ -4,11 +4,15 @@ import com.google.gson.GsonBuilder;
 import me.theseems.tcrates.activators.BlockCrate;
 import me.theseems.tcrates.commands.CrateCommand;
 import me.theseems.tcrates.config.CrateConfig;
+import me.theseems.tcrates.config.CrateRewardConfigManager;
 import me.theseems.tcrates.config.DBConfig;
 import me.theseems.tcrates.config.TCratesConfig;
 import me.theseems.tcrates.handlers.AutoGrantHandler;
+import me.theseems.tcrates.rewards.GroupReward;
+import me.theseems.tcrates.rewards.MoneyReward;
 import me.theseems.tcrates.utils.Utils;
 import org.bukkit.Bukkit;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,12 +23,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 public class TCratesPlugin extends JavaPlugin {
   private static Plugin plugin;
   private static AutoGrantHandler grantHandler;
   private static BlockCrate blockCrate;
+  private static CrateRewardConfigManager manager;
 
   private static File loadFile(String name) throws IOException {
     File file = new File(getPlugin().getDataFolder(), name);
@@ -89,6 +95,33 @@ public class TCratesPlugin extends JavaPlugin {
 
     TCratesAPI.setCrateManager(new SimpleCrateManager());
     TCratesAPI.setRewardQueue(new MemoryRewardQueue());
+    manager = new CrateRewardConfigManager();
+    manager.register(
+        "money",
+        crateRewardConfig ->
+            new MoneyReward(crateRewardConfig.getMeta().getInteger("money").orElse(0)) {
+              @Override
+              public ItemStack getIcon(UUID player) {
+                return crateRewardConfig.getIcon().getStack();
+              }
+
+              @Override
+              public String getName() {
+                return crateRewardConfig.getName();
+              }
+            });
+    manager.register(
+        "group",
+        crateRewardConfig ->
+            new GroupReward(
+                crateRewardConfig.getMeta().getString("group").orElse("default"),
+                crateRewardConfig.getMeta().getString("context").orElse("global")) {
+              @Override
+              public ItemStack getIcon(UUID player) {
+                return crateRewardConfig.getIcon().getStack();
+              }
+            });
+
     try {
       loadDatabase();
     } catch (Exception e) {
@@ -130,6 +163,10 @@ public class TCratesPlugin extends JavaPlugin {
       e.printStackTrace();
     }
     grantHandler.getTask().cancel();
+  }
+
+  public static CrateRewardConfigManager getManager() {
+    return manager;
   }
 
   public static Logger getPluginLogger() {

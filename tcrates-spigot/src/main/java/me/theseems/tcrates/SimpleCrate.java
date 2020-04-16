@@ -37,6 +37,8 @@ public class SimpleCrate implements Crate {
     return rewardContainer;
   }
 
+
+
   @Override
   public Collection<UUID> getPlayers() {
     return players;

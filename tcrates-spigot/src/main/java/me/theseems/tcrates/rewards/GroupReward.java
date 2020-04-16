@@ -1,6 +1,9 @@
 package me.theseems.tcrates.rewards;
 
+import me.theseems.tcrates.CrateMeta;
+import me.theseems.tcrates.MemoryCrateMeta;
 import me.theseems.tcrates.TCratesPlugin;
+import me.theseems.tcrates.utils.Utils;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.group.Group;
@@ -13,8 +16,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
-import java.util.Base64;
-import java.util.Date;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -22,6 +23,25 @@ public abstract class GroupReward implements IconReward {
   private String groupName;
   private String server;
   private LuckPerms luckPerms;
+
+  private MemoryCrateMeta meta;
+
+  @Override
+  public MemoryCrateMeta getMeta() {
+    return meta;
+  }
+
+  public void setMeta(MemoryCrateMeta meta) {
+    this.meta = meta;
+  }
+
+  @Override
+  public void setMeta(CrateMeta meta) {
+    this.meta = MemoryCrateMeta.to(meta);
+    meta.set("type", "group");
+    meta.set("money", groupName);
+    meta.set("server", server);
+  }
 
   public GroupReward(String groupName, String server) {
     this.groupName = groupName;
@@ -65,16 +85,15 @@ public abstract class GroupReward implements IconReward {
           .warning("There is no group '" + groupName + "' for user " + player);
 
       Player actual = Bukkit.getPlayer(player);
-      if (actual == null)
-        return;
+      if (actual == null) return;
 
-      TextComponent component = new TextComponent("§7Произошла ошибка во время выдачи награды: §c§l[СООБЩИТЬ ОБ ОШИБКЕ]");
+      TextComponent component =
+          new TextComponent("§7Произошла ошибка во время выдачи награды: §c§l[СООБЩИТЬ ОБ ОШИБКЕ]");
       component.setClickEvent(
           new ClickEvent(
               ClickEvent.Action.OPEN_URL,
-              "https://theseems.ru/vmc/?c="
-                  + Base64.getEncoder()
-                      .encodeToString(("tcrates-not-granted-" + groupName + new Date().toString() + "-to-" + actual.getName()).getBytes())));
+              Utils.encode(
+                  new NullPointerException("Not granted group '" + groupName + "' to " + player))));
       actual.spigot().sendMessage(component);
     } else {
       InheritanceNode node =

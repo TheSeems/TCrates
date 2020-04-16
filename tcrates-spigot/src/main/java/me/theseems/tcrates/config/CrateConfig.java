@@ -3,9 +3,11 @@ package me.theseems.tcrates.config;
 import me.theseems.tcrates.*;
 import me.theseems.tcrates.animations.CircleCrateAnimation;
 import me.theseems.tcrates.requirements.KeyRequirement;
+import me.theseems.tcrates.rewards.CrateReward;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 public class CrateConfig {
@@ -38,7 +40,10 @@ public class CrateConfig {
 
     ProbabilityRewardContainer rewardContainer = new ProbabilityRewardContainer();
     for (CrateRewardConfig crateRewardConfig : rewardList) {
-      rewardContainer.addReward(crateRewardConfig.getProbability(), crateRewardConfig.formReward());
+      Optional<CrateReward> reward = TCratesPlugin.getManager().make(crateRewardConfig);
+      if (!reward.isPresent()) continue;
+
+      rewardContainer.addReward(crateRewardConfig.getProbability(), reward.get());
     }
 
     crate.setRewardContainer(rewardContainer);
@@ -46,12 +51,14 @@ public class CrateConfig {
     crate.setCrateMeta(meta);
 
     if (needKeys) crate.setRequirements(new KeyRequirement(name));
-    else crate.setRequirements(new KeyRequirement(name) {
-      @Override
-      public boolean canOpen(UUID player) {
-        return true;
-      }
-    });
+    else
+      crate.setRequirements(
+          new KeyRequirement(name) {
+            @Override
+            public boolean canOpen(UUID player) {
+              return true;
+            }
+          });
 
     return crate;
   }

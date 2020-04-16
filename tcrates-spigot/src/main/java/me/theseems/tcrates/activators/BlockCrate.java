@@ -38,7 +38,9 @@ public class BlockCrate implements Listener {
 
   @EventHandler
   public void onOpen(CrateOpenEvent e) {
-    if (!e.isCancelled() && crates.containsValue(e.getCrateName())) {
+    if (!e.isCancelled()
+        && crates.containsValue(e.getCrateName())
+        && !inUse.containsKey(e.getCrateName())) {
       inUse.put(e.getCrateName(), e.getPlayer());
     }
   }
@@ -48,10 +50,12 @@ public class BlockCrate implements Listener {
     if (e.getClickedBlock() == null) return;
     Location location = e.getClickedBlock().getLocation();
     if (crates.containsKey(location)) {
-
       e.setCancelled(true);
       if (inUse.containsKey(crates.get(location))) {
-        e.getPlayer().sendMessage("§7Кейс уже открывается игроком §6" + inUse.get(crates.get(location)).getDisplayName());
+        e.getPlayer()
+            .sendMessage(
+                "§7Кейс уже открывается игроком §6"
+                    + inUse.get(crates.get(location)).getDisplayName());
         return;
       }
 

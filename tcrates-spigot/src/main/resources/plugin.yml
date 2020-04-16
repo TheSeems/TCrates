@@ -1,5 +1,6 @@
 name: TCrates
 main: me.theseems.tcrates.TCratesPlugin
 version: 0.1D
+api-version: 1.13
 commands:
   crate:
