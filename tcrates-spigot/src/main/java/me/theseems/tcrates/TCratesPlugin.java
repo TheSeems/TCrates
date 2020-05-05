@@ -90,12 +90,15 @@ public class TCratesPlugin extends JavaPlugin {
   }
 
   @Override
-  public void onEnable() {
-    plugin = this;
-
+  public void onLoad() {
     TCratesAPI.setCrateManager(new SimpleCrateManager());
     TCratesAPI.setRewardQueue(new MemoryRewardQueue());
     manager = new CrateRewardConfigManager();
+  }
+
+  @Override
+  public void onEnable() {
+    plugin = this;
     manager.register(
         "money",
         crateRewardConfig ->

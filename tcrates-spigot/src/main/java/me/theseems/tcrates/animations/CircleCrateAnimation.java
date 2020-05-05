@@ -140,15 +140,14 @@ public class CircleCrateAnimation implements CrateAnimation, Listener {
 
   public static double getDoubleProperty(CircleRoll roll, String name, double def) {
     return TCratesAPI.getCrateManager()
-      .find(roll.getCrateName())
-      .flatMap((Function<Crate, Optional<Double>>) crate1 -> crate1.getMeta().getDouble(name))
-      .orElse(def);
+        .find(roll.getCrateName())
+        .flatMap((Function<Crate, Optional<Double>>) crate1 -> crate1.getMeta().getDouble(name))
+        .orElse(def);
   }
 
   public void run() {
     players.forEach(
         (uuid, circleRoll) -> {
-          Bukkit.getPlayer(uuid).sendMessage("in circle roll " + players.toString());
           int pulsePeriod = getIntProperty(circleRoll, "pulse_period", PULSE_PERIOD);
           int generateTime = getIntProperty(circleRoll, "generate_time", GENERATE_TIME);
           int generatePeriod = getIntProperty(circleRoll, "generate_period", GENERATE_PERIOD);

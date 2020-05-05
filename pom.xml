@@ -14,5 +14,12 @@
         <module>tcrates-spigot</module>
     </modules>
 
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub TheSeems Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/theseems/TCrates</url>
+        </repository>
+    </distributionManagement>
 
 </project>

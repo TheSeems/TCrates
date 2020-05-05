@@ -26,8 +26,7 @@ public class DBConfig {
     config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
     config.addDataSourceProperty("allowMultiQueries", "true");
     config.setMaximumPoolSize(200);
-    HikariPool pool = new HikariPool(config);
-    return pool;
+    return new HikariPool(config);
   }
 
   public String getUrl() {

@@ -23,6 +23,10 @@ public class DummyReward implements CrateReward {
     return "Dummy<" + name + ">";
   }
 
+  public void setName(String name) {
+    this.name = name;
+  }
+
   @Override
   public CrateMeta getMeta() {
     return meta;
