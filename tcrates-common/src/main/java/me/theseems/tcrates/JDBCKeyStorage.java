@@ -24,7 +24,7 @@ public class JDBCKeyStorage implements KeyStorage {
     try (Connection connection = getConnection()) {
       Statement statement = connection.createStatement();
       statement.execute(
-          "CREATE TABLE IF NOT EXISTS TCrates (Player varchar(100) PRIMARY KEY UNIQUE, Crate VARCHAR(100), Keys integer) ");
+          "CREATE TABLE IF NOT EXISTS TCrates (id SERIAL PRIMARY KEY UNIQUE, Player varchar(100), Crate VARCHAR(100), Keys integer) ");
     } catch (SQLException e) {
       System.err.println("Error setting up JDBCKeyStorage: " + e.getMessage());
       e.printStackTrace();
@@ -75,7 +75,7 @@ public class JDBCKeyStorage implements KeyStorage {
       Statement statement = connection.createStatement();
       if (!contains(player, crateName))
         statement.execute(
-            "INSERT INTO TCrates VALUES ('" + player + "', '" + crateName + "', " + count + ")");
+            "INSERT INTO TCrates VALUES (DEFAULT, '" + player + "', '" + crateName + "', " + count + ")");
       else
         statement.execute(
             "UPDATE TCrates SET Keys="

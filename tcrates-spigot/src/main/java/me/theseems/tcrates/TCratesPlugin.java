@@ -2,6 +2,7 @@ package me.theseems.tcrates;
 
 import com.google.gson.GsonBuilder;
 import me.theseems.tcrates.activators.BlockCrate;
+import me.theseems.tcrates.api.TCratesSpigotApi;
 import me.theseems.tcrates.commands.CrateCommand;
 import me.theseems.tcrates.config.CrateConfig;
 import me.theseems.tcrates.config.CrateRewardConfigManager;
@@ -26,11 +27,10 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import static me.theseems.tcrates.api.TCratesSpigotApi.blockCrate;
+
 public class TCratesPlugin extends JavaPlugin {
   private static Plugin plugin;
-  private static AutoGrantHandler grantHandler;
-  private static BlockCrate blockCrate;
-  private static CrateRewardConfigManager manager;
 
   private static File loadFile(String name) throws IOException {
     File file = new File(getPlugin().getDataFolder(), name);
@@ -93,13 +93,13 @@ public class TCratesPlugin extends JavaPlugin {
   public void onLoad() {
     TCratesAPI.setCrateManager(new SimpleCrateManager());
     TCratesAPI.setRewardQueue(new MemoryRewardQueue());
-    manager = new CrateRewardConfigManager();
+    TCratesSpigotApi.setManager(new CrateRewardConfigManager());
   }
 
   @Override
   public void onEnable() {
     plugin = this;
-    manager.register(
+    TCratesSpigotApi.getManager().register(
         "money",
         crateRewardConfig ->
             new MoneyReward(crateRewardConfig.getMeta().getInteger("money").orElse(0)) {
@@ -113,7 +113,7 @@ public class TCratesPlugin extends JavaPlugin {
                 return crateRewardConfig.getName();
               }
             });
-    manager.register(
+    TCratesSpigotApi.getManager().register(
         "group",
         crateRewardConfig ->
             new GroupReward(
@@ -141,7 +141,7 @@ public class TCratesPlugin extends JavaPlugin {
       e.printStackTrace();
     }
 
-    grantHandler = new AutoGrantHandler();
+    TCratesSpigotApi.setGrantHandler(new AutoGrantHandler());
     Objects.requireNonNull(getCommand("crate")).setExecutor(new CrateCommand());
 
     if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -165,11 +165,7 @@ public class TCratesPlugin extends JavaPlugin {
       getLogger().warning("Error saving crates: " + e.getMessage());
       e.printStackTrace();
     }
-    grantHandler.getTask().cancel();
-  }
-
-  public static CrateRewardConfigManager getManager() {
-    return manager;
+    TCratesSpigotApi.getGrantHandler().getTask().cancel();
   }
 
   public static Logger getPluginLogger() {

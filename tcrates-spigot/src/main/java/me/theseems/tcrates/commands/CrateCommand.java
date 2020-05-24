@@ -104,7 +104,7 @@ public class CrateCommand implements CommandExecutor {
       TCratesAPI.getKeyStorage()
           .setKeysFor(player.getUniqueId(), crateName, Integer.parseInt(args[2]));
       sender.sendMessage(
-          "§aGiven §7" + Integer.parseInt(args[2]) + "§a key(s) for a player " + args[0]);
+          "§aSet §7" + Integer.parseInt(args[2]) + "§a key(s) for a player " + args[0]);
       return true;
     } catch (NumberFormatException e) {
       sender.sendMessage("§7Invalid key count: " + args[2]);

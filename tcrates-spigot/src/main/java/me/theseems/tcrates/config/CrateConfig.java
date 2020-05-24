@@ -2,6 +2,7 @@ package me.theseems.tcrates.config;
 
 import me.theseems.tcrates.*;
 import me.theseems.tcrates.animations.CircleCrateAnimation;
+import me.theseems.tcrates.api.TCratesSpigotApi;
 import me.theseems.tcrates.requirements.KeyRequirement;
 import me.theseems.tcrates.rewards.CrateReward;
 
@@ -15,7 +16,6 @@ public class CrateConfig {
   private List<CrateRewardConfig> rewardList;
   private String name;
   private String animation;
-  private boolean needKeys;
 
   public CrateConfig(
       MemoryCrateMeta meta,
@@ -27,7 +27,6 @@ public class CrateConfig {
     this.rewardList = rewardList;
     this.name = name;
     this.animation = animation;
-    this.needKeys = needKeys;
   }
 
   public Crate makeCrate() {
@@ -40,7 +39,7 @@ public class CrateConfig {
 
     ProbabilityRewardContainer rewardContainer = new ProbabilityRewardContainer();
     for (CrateRewardConfig crateRewardConfig : rewardList) {
-      Optional<CrateReward> reward = TCratesPlugin.getManager().make(crateRewardConfig);
+      Optional<CrateReward> reward = TCratesSpigotApi.getManager().make(crateRewardConfig);
       if (!reward.isPresent()) continue;
 
       rewardContainer.addReward(crateRewardConfig.getProbability(), reward.get());
@@ -50,15 +49,7 @@ public class CrateConfig {
     crate.setAnimation(animation);
     crate.setCrateMeta(meta);
 
-    if (needKeys) crate.setRequirements(new KeyRequirement(name));
-    else
-      crate.setRequirements(
-          new KeyRequirement(name) {
-            @Override
-            public boolean canOpen(UUID player) {
-              return true;
-            }
-          });
+    crate.setRequirements(new KeyRequirement(name));
 
     return crate;
   }
@@ -93,13 +84,5 @@ public class CrateConfig {
 
   public void setAnimation(String animation) {
     this.animation = animation;
-  }
-
-  public boolean isNeedKeys() {
-    return needKeys;
-  }
-
-  public void setNeedKeys(boolean needKeys) {
-    this.needKeys = needKeys;
   }
 }
