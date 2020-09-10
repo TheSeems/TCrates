@@ -15,12 +15,12 @@ public class MemoryRewardQueue implements RewardQueue {
 
   @Override
   public void put(UUID player, String crateName, int index, boolean granted) {
-    System.out.println("Entities : " + entries);
     if (granted) {
       entries.remove(new SimpleRewardQueueEntry(index, player, crateName, false));
     } else {
       entries.add(new SimpleRewardQueueEntry(index, player, crateName, false));
     }
+    System.out.println("Now entities : " + entries);
   }
 
   @Override

@@ -1,5 +1,7 @@
 package me.theseems.tcrates.activators;
 
+import fr.mrmicky.fastparticle.FastParticle;
+import fr.mrmicky.fastparticle.ParticleType;
 import me.theseems.tcrates.Crate;
 import me.theseems.tcrates.TCratesAPI;
 import me.theseems.tcrates.TCratesPlugin;
@@ -7,16 +9,17 @@ import me.theseems.tcrates.events.CrateCloseEvent;
 import me.theseems.tcrates.events.CrateOpenEvent;
 import me.theseems.tcrates.utils.Utils;
 import org.bukkit.Location;
-import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.util.Vector;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-public class BlockCrate implements Listener {
+public class BlockCrate implements Listener, Runnable {
   private Map<Location, String> crates;
   private Map<String, Player> inUse;
 
@@ -29,18 +32,28 @@ public class BlockCrate implements Listener {
         .registerEvents(this, TCratesPlugin.getPlugin());
   }
 
-  @EventHandler
+  @EventHandler(priority = EventPriority.MONITOR)
   public void onClose(CrateCloseEvent e) {
     System.out.println(
         "Crate close : " + e.getCrateName() + " " + e.getRewards() + " for " + e.getPlayer());
     inUse.remove(e.getCrateName());
   }
 
-  @EventHandler
+  @EventHandler(priority = EventPriority.MONITOR)
   public void onOpen(CrateOpenEvent e) {
     if (!e.isCancelled()
         && crates.containsValue(e.getCrateName())
         && !inUse.containsKey(e.getCrateName())) {
+      System.out.println(
+          "Crate open: "
+              + e.getPlayerUUID()
+              + " ("
+              + e.getPlayer().getName()
+              + ")"
+              + " "
+              + e.getCrateName()
+              + " "
+              + e.isCancelled());
       inUse.put(e.getCrateName(), e.getPlayer());
     }
   }
@@ -48,6 +61,8 @@ public class BlockCrate implements Listener {
   @EventHandler
   public void onClick(PlayerInteractEvent e) {
     if (e.getClickedBlock() == null) return;
+
+
     Location location = e.getClickedBlock().getLocation();
     if (crates.containsKey(location)) {
       e.setCancelled(true);
@@ -60,22 +75,33 @@ public class BlockCrate implements Listener {
       }
 
       String crateName = crates.get(location);
-      TCratesAPI.getCrateManager()
-          .find(crateName)
-          .ifPresentOrElse(
-              crate -> {
-                if (crate.getRequirements().canOpen(e.getPlayer().getUniqueId())) {
-                  crate.open(e.getPlayer().getUniqueId());
-                } else {
-                  e.getPlayer().sendMessage("§cВы не можете открыть этот кейс");
-                }
-              },
-              () ->
-                  TCratesPlugin.getPluginLogger()
-                      .warning(
-                          "There is a block associated with a crate "
-                              + crateName
-                              + " but it cannot be found"));
+      Optional<Crate> optionalCrate = TCratesAPI.getCrateManager().find(crateName);
+
+      if (optionalCrate.isPresent()) {
+        Crate crate = optionalCrate.get();
+        if (crate.getMeta().getString("on_open_command").isPresent()) {
+          e.getPlayer().chat("/" + crate.getMeta().getString("on_open_command").get());
+          return;
+        }
+
+        if (crate.getRequirements().canOpen(e.getPlayer().getUniqueId())) {
+          crate.open(e.getPlayer().getUniqueId());
+        } else {
+          e.getPlayer()
+              .sendMessage(
+                  crate
+                      .getMeta()
+                      .getString("no_access_message")
+                      .orElse("§cВы не можете открыть этот кейс! Недостаточно ключей!"));
+          crate.getMeta().getString("no_access_command").ifPresent(s -> e.getPlayer().chat(s));
+        }
+      } else {
+        TCratesPlugin.getPluginLogger()
+            .warning(
+                "There is a block associated with a crate "
+                    + crateName
+                    + " but it cannot be found");
+      }
     }
   }
 
@@ -90,15 +116,8 @@ public class BlockCrate implements Listener {
     crateOptional.get().getMeta().set("block-crate-location", Utils.forLocation(location));
 
     crates.put(location, crateName);
-    Objects.requireNonNull(location.getWorld())
-        .spawnParticle(
-            Particle.FLAME,
-            location.clone().add(new Vector(0.5, 0.5, 0.5)),
-            40,
-            0.1,
-            0.1,
-            0.1,
-            0.1);
+
+    FastParticle.spawnParticle(location.getWorld(), ParticleType.FLAME, location, 50);
   }
 
   public void scan() {
@@ -109,23 +128,21 @@ public class BlockCrate implements Listener {
           .getMeta()
           .getString("block-crate-location")
           .ifPresent(
-              s ->
-                  Utils.fromString(s)
-                      .ifPresentOrElse(
-                          location -> {
-                            if (!crates.containsKey(location)) register(crate, location);
-                          },
-                          () ->
-                              TCratesPlugin.getPluginLogger()
-                                  .warning("Invalid location meta for crate " + crate + ": " + s)));
+              s -> {
+                Optional<Location> d = Utils.fromString(s);
+                if (d.isPresent()) {
+                  Location location = d.get();
+                  if (!crates.containsKey(location)) register(crate, location);
+                } else
+                  TCratesPlugin.getPluginLogger()
+                      .warning("Invalid location meta for crate " + crate + ": " + s);
+              });
     }
   }
 
   public void unregister(Location location) {
     crates.remove(location);
-    Objects.requireNonNull(location.getWorld())
-        .spawnParticle(
-            Particle.BLOCK_CRACK, location.clone(), 40, location.clone().getBlock().getBlockData());
+    FastParticle.spawnParticle(location.getWorld(), ParticleType.FLAME, location, 10);
   }
 
   public String getOpener(String crateName) {
@@ -137,5 +154,10 @@ public class BlockCrate implements Listener {
   public void clear() {
     crates.clear();
     inUse.clear();
+  }
+
+  @Override
+  public void run() {
+
   }
 }

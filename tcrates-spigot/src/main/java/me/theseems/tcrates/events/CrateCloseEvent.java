@@ -50,6 +50,14 @@ public class CrateCloseEvent extends Event implements Cancellable {
     return rewardList;
   }
 
+  public void removeReward(int rewardIndex) {
+    rewards.remove(rewardIndex);
+  }
+
+  public void addReward(int rewardIndex) {
+    rewards.add(rewardIndex);
+  }
+
   public Collection<Integer> getRewards() {
     return rewards;
   }

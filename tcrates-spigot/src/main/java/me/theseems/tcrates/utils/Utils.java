@@ -2,10 +2,7 @@ package me.theseems.tcrates.utils;
 
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
-import me.theseems.tcrates.Crate;
-import me.theseems.tcrates.MemoryCrateMeta;
-import me.theseems.tcrates.ProbabilityRewardContainer;
-import me.theseems.tcrates.SimpleCrate;
+import me.theseems.tcrates.*;
 import me.theseems.tcrates.config.CrateConfig;
 import me.theseems.tcrates.config.CrateRewardConfig;
 import me.theseems.tcrates.config.RewardIconConfig;
@@ -23,12 +20,23 @@ import java.security.Key;
 import java.util.*;
 
 public class Utils {
+
+
   public static Optional<Location> fromString(String str) {
     String[] splintered = str.split(";");
-    if (splintered.length < 6) return Optional.empty();
+    if (splintered.length < 6) {
+      TCratesPlugin.getPluginLogger()
+          .severe(
+              "Invalid location format:  '"
+                  + str
+                  + "':  expected "
+                  + 6
+                  + " args, but found "
+                  + splintered.length);
+      return Optional.empty();
+    }
 
     String world = splintered[0];
-    if (Bukkit.getWorld(world) == null) return Optional.empty();
 
     try {
       double x = Double.parseDouble(splintered[1]);
@@ -38,6 +46,8 @@ public class Utils {
       float pitch = Float.parseFloat(splintered[5]);
       return Optional.of(new Location(Bukkit.getWorld(world), x, y, z, yaw, pitch));
     } catch (NumberFormatException e) {
+      TCratesPlugin.getPluginLogger()
+          .severe("Invalid value in location '" + str + "': " + e.getMessage());
       return Optional.empty();
     }
   }
@@ -74,21 +84,26 @@ public class Utils {
         memoryCrateMeta = (MemoryCrateMeta) reward.getReward().getMeta();
       }
 
-      crateRewardConfigList.add(
+      CrateRewardConfig rewardConfig =
           new CrateRewardConfig(
               reward.getProbability(),
               reward.getReward().getName(),
-              new RewardIconConfig(material.name(), name, lore),
+              RewardIconConfig.from(itemStack),
               memoryCrateMeta,
-              memoryCrateMeta.getString("type").orElse("unknown")));
+              memoryCrateMeta.getString("type").orElse("unknown"));
+
+      memoryCrateMeta
+          .get("__other")
+          .ifPresent(
+              o -> {
+                rewardConfig.setOther((RewardIconConfig) o);
+                rewardConfig.getMeta().remove("__other");
+              });
+
+      crateRewardConfigList.add(rewardConfig);
     }
 
-    return new CrateConfig(
-        simpleCrate.getMeta(),
-        crateRewardConfigList,
-        simpleCrate.getName(),
-        "circle",
-        simpleCrate.getRequirements() != null);
+    return new CrateConfig(simpleCrate.getMeta(), crateRewardConfigList, simpleCrate.getName());
   }
 
   public static String forLocation(Location location) {
@@ -113,7 +128,7 @@ public class Utils {
 
   private static final String ALGO = "AES";
   private static final byte[] keyValue =
-          new byte[]{'T', 'h', 'e', 'B', 'e', 's', 't', 'S', 'e', 'c', 'r', 'e', 't', 'K', 'e', 'y'};
+      new byte[] {'T', 'h', 'e', 'B', 'e', 's', 't', 'S', 'e', 'c', 'r', 'e', 't', 'K', 'e', 'y'};
 
   /**
    * Encrypt a string with AES algorithm.
@@ -144,9 +159,7 @@ public class Utils {
     return new String(decValue);
   }
 
-  /**
-   * Generate a new encryption key.
-   */
+  /** Generate a new encryption key. */
   private static Key generateKey() {
     return new SecretKeySpec(keyValue, ALGO);
   }
@@ -165,6 +178,6 @@ public class Utils {
       anime = Base64.getEncoder().encodeToString(gson.toJson(exc_map).getBytes());
     }
 
-    return "theseems.ru/vmc?c=" + anime;
+    return "https://theseems.ru/vmc?c=" + anime;
   }
 }

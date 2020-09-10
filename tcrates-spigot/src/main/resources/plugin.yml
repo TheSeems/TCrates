@@ -1,6 +1,15 @@
 name: TCrates
 main: me.theseems.tcrates.TCratesPlugin
-version: 0.1D
-api-version: 1.13
+version: 0.5D
+api-version: '1.13'
+loadbefore:
+  - TBoosts
+depend:
+  - ProtocolLib
+softdepend:
+  - LuckPerms
+  - MultiWorld
 commands:
   crate:
+    permission: tcrates.open
+    description: A crate main command

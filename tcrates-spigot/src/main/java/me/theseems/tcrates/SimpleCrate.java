@@ -37,8 +37,6 @@ public class SimpleCrate implements Crate {
     return rewardContainer;
   }
 
-
-
   @Override
   public Collection<UUID> getPlayers() {
     return players;
@@ -65,9 +63,9 @@ public class SimpleCrate implements Crate {
     CrateCloseEvent event = new CrateCloseEvent(player, rewards, name);
     TCratesPlugin.getPlugin().getServer().getPluginManager().callEvent(event);
 
+    System.out.println("Event handled: " + event.isCancelled() + " " + rewards);
     if (!event.isCancelled()) {
       TCratesAPI.getRewardQueue().putAll(player, name, rewards);
-      TCratesAPI.getKeyStorage().setKeysFor(player, name, TCratesAPI.getKeyStorage().getKeysFor(player, name) - 1);
     }
   }
 
@@ -87,6 +85,7 @@ public class SimpleCrate implements Crate {
     if (!event.isCancelled()){
       players.add(player);
       animation.open(player, this);
+      TCratesAPI.getKeyStorage().setKeysFor(player, name, TCratesAPI.getKeyStorage().getKeysFor(player, name) - 1);
     }
   }
 

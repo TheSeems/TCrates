@@ -1,5 +1,6 @@
 package me.theseems.tcrates.handlers;
 
+import me.theseems.tcrates.rewards.CrateReward;
 import me.theseems.tcrates.rewards.RewardQueueEntry;
 import me.theseems.tcrates.TCratesAPI;
 import me.theseems.tcrates.TCratesPlugin;
@@ -7,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public class AutoGrantHandler implements Runnable {
@@ -25,27 +27,22 @@ public class AutoGrantHandler implements Runnable {
         continue;
       }
 
-      entry
-          .take()
-          .ifPresentOrElse(
-              crateReward -> {
-                TCratesAPI.getRewardQueue().remove(entry);
-                crateReward.give(player);
-                actual.sendMessage(
-                    "§7Выдана награда из кейса §7'§6"
-                        + entry.getCrateName()
-                        + "§7': "
-                        + crateReward.getName().replace("&", "§"));
-              },
-              () ->
-                  TCratesPlugin.getPluginLogger()
-                      .warning(
-                          "Cannot grant non-granted entry: "
-                              + entry.getIndex()
-                              + "@"
-                              + entry.getCrateName()
-                              + " for "
-                              + entry.getPlayer()));
+      Optional<CrateReward> optionalCrateReward = entry.take();
+      if (optionalCrateReward.isPresent()) {
+        CrateReward crateReward = optionalCrateReward.get();
+        System.out.println("Granting: " + crateReward);
+        TCratesAPI.getRewardQueue().remove(entry);
+        crateReward.give(player);
+      } else {
+        TCratesPlugin.getPluginLogger()
+            .warning(
+                "Cannot grant non-granted entry: "
+                    + entry.getIndex()
+                    + "@"
+                    + entry.getCrateName()
+                    + " for "
+                    + entry.getPlayer());
+      }
     }
   }
 

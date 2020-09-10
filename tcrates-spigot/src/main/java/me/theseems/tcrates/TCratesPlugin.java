@@ -8,11 +8,18 @@ import me.theseems.tcrates.config.CrateConfig;
 import me.theseems.tcrates.config.CrateRewardConfigManager;
 import me.theseems.tcrates.config.DBConfig;
 import me.theseems.tcrates.config.TCratesConfig;
+import me.theseems.tcrates.handlers.AnnounceListener;
 import me.theseems.tcrates.handlers.AutoGrantHandler;
+import me.theseems.tcrates.handlers.CooldownListener;
+import me.theseems.tcrates.handlers.GroupMergeListener;
+import me.theseems.tcrates.rewards.CommandReward;
 import me.theseems.tcrates.rewards.GroupReward;
+import me.theseems.tcrates.rewards.ItemReward;
 import me.theseems.tcrates.rewards.MoneyReward;
 import me.theseems.tcrates.utils.Utils;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -31,6 +38,7 @@ import static me.theseems.tcrates.api.TCratesSpigotApi.blockCrate;
 
 public class TCratesPlugin extends JavaPlugin {
   private static Plugin plugin;
+  private static CrateRewardConfigManager configManager;
 
   private static File loadFile(String name) throws IOException {
     File file = new File(getPlugin().getDataFolder(), name);
@@ -72,6 +80,7 @@ public class TCratesPlugin extends JavaPlugin {
   private void loadFeatures() {
     blockCrate = new BlockCrate();
     blockCrate.scan();
+    Bukkit.getScheduler().runTaskTimer(this, blockCrate, 35, 35);
   }
 
   private void loadDatabase() throws IOException {
@@ -91,48 +100,98 @@ public class TCratesPlugin extends JavaPlugin {
 
   @Override
   public void onLoad() {
+    plugin = this;
     TCratesAPI.setCrateManager(new SimpleCrateManager());
     TCratesAPI.setRewardQueue(new MemoryRewardQueue());
-    TCratesSpigotApi.setManager(new CrateRewardConfigManager());
+    configManager = new CrateRewardConfigManager();
+    TCratesSpigotApi.setManager(configManager);
   }
 
   @Override
   public void onEnable() {
-    plugin = this;
-    TCratesSpigotApi.getManager().register(
-        "money",
-        crateRewardConfig ->
-            new MoneyReward(crateRewardConfig.getMeta().getInteger("money").orElse(0)) {
-              @Override
-              public ItemStack getIcon(UUID player) {
-                return crateRewardConfig.getIcon().getStack();
-              }
+    TCratesSpigotApi.getManager()
+        .register(
+            "money",
+            crateRewardConfig ->
+                new MoneyReward(crateRewardConfig.getMeta().getInteger("money").orElse(0)) {
+                  @Override
+                  public ItemStack getIcon(UUID player) {
+                    return crateRewardConfig.getIcon().getStack();
+                  }
 
-              @Override
-              public String getName() {
-                return crateRewardConfig.getName();
-              }
-            });
-    TCratesSpigotApi.getManager().register(
-        "group",
-        crateRewardConfig ->
-            new GroupReward(
-                crateRewardConfig.getMeta().getString("group").orElse("default"),
-                crateRewardConfig.getMeta().getString("context").orElse("global")) {
-              @Override
-              public ItemStack getIcon(UUID player) {
-                return crateRewardConfig.getIcon().getStack();
-              }
-            });
+                  @Override
+                  public String getName() {
+                    return crateRewardConfig.getName();
+                  }
+                });
+    TCratesSpigotApi.getManager()
+        .register(
+            "item",
+            crateRewardConfig ->
+                new ItemReward() {
+                  @Override
+                  public ItemStack get(Player player) {
+                    crateRewardConfig
+                        .getMeta()
+                        .set("__other", crateRewardConfig.getOther().getStack());
+                    return crateRewardConfig.getOther().getStack();
+                  }
+
+                  @Override
+                  public ItemStack getIcon(UUID player) {
+                    return crateRewardConfig.getIcon().getStack();
+                  }
+
+                  @Override
+                  public String getName() {
+                    return crateRewardConfig.getName();
+                  }
+                });
+
+    if (Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
+      TCratesSpigotApi.getManager()
+          .register(
+              "group",
+              crateRewardConfig ->
+                  new GroupReward(
+                      crateRewardConfig.getMeta().getString("group").orElse("default"),
+                      crateRewardConfig.getMeta().getString("context").orElse("global")) {
+                    @Override
+                    public ItemStack getIcon(UUID player) {
+                      return crateRewardConfig.getIcon().getStack();
+                    }
+                  });
+    } else {
+      System.err.println("LuckPerms is not installed here, so 'group' type will not work!");
+      System.err.println("As an alternative you may user commands in your crate's rewards");
+    }
+
+    TCratesSpigotApi.getManager()
+        .register(
+            "command",
+            crateRewardConfig ->
+                new CommandReward(crateRewardConfig.getMeta().getString("command").orElse("")) {
+                  @Override
+                  public ItemStack getIcon(UUID player) {
+                    return crateRewardConfig.getIcon().getStack();
+                  }
+
+                  @Override
+                  public String getName() {
+                    return crateRewardConfig.getName();
+                  }
+                });
 
     try {
       loadDatabase();
     } catch (Exception e) {
       getLogger().warning("Error getting info about database, using memory one");
-      e.printStackTrace();
       TCratesAPI.setKeyStorage(new MemoryKeyStorage());
     }
 
+    for (World world : Bukkit.getWorlds()) {
+      getLogger().severe("World: " + world);
+    }
     loadFeatures();
     try {
       loadCases();
@@ -147,6 +206,13 @@ public class TCratesPlugin extends JavaPlugin {
     if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
       new CrateExpansion().register();
     }
+
+    getLogger().info("Loading cooldown feature...");
+    getServer().getPluginManager().registerEvents(new CooldownListener(), this);
+    getLogger().info("Loading announce feature...");
+    getServer().getPluginManager().registerEvents(new AnnounceListener(), this);
+    getLogger().info("Loading group merge feature...");
+    getServer().getPluginManager().registerEvents(new GroupMergeListener(), this);
   }
 
   public static Plugin getPlugin() {

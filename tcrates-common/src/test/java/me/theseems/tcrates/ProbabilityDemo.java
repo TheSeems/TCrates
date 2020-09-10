@@ -7,12 +7,16 @@ public class ProbabilityDemo {
     UUID player = UUID.randomUUID();
 
     ProbabilityRewardContainer container = new ProbabilityRewardContainer();
-    container.addReward(50, new DummyReward("50%"));
-    container.addReward(40, new DummyReward("40%"));
-    container.addReward(10, new DummyReward("10%"));
-    container.addReward(5, new DummyReward("5%"));
+    container.addReward(50D, new DummyReward("50%"));
+    container.addReward(40D, new DummyReward("40%"));
+    container.addReward(10D, new DummyReward("10%"));
+    container.addReward(5D, new DummyReward("5%"));
 
-    for (Integer integer : container.generate(player)) {
+    MemoryCrateMeta memoryCrateMeta = new MemoryCrateMeta();
+    memoryCrateMeta.set("minRewards", 1);
+    memoryCrateMeta.set("maxRewards", 3);
+
+    for (Integer integer : container.generate(player, memoryCrateMeta)) {
       container.find(integer).get().give(player);
     }
   }

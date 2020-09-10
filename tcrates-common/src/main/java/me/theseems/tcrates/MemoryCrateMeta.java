@@ -19,13 +19,25 @@ public class MemoryCrateMeta implements CrateMeta {
 
   @Override
   public Optional<Object> get(String key) {
-    return Optional.of(map.get(key));
+    return Optional.ofNullable(map.get(key));
+  }
+
+  private Optional<Integer> getRawInteger(String key) {
+    if (!map.containsKey(key)) return Optional.empty();
+    try {
+      return Optional.of((Integer) map.get(key));
+    } catch (Exception e) {
+      return Optional.empty();
+    }
   }
 
   @Override
   public Optional<Integer> getInteger(String key) {
-    Optional<Double> doubleOptional = getDouble(key);
-    return doubleOptional.map(Double::intValue);
+    Optional<Integer> optionalInteger = getRawInteger(key);
+    if (optionalInteger.isPresent()) return optionalInteger;
+    else {
+      return getDouble(key).map(Double::intValue);
+    }
   }
 
   @Override
@@ -46,6 +58,21 @@ public class MemoryCrateMeta implements CrateMeta {
     } catch (Exception e) {
       return Optional.empty();
     }
+  }
+
+  @Override
+  public Optional<Boolean> getBoolean(String key) {
+    if (!map.containsKey(key)) return Optional.empty();
+    try {
+      return Optional.of((Boolean) map.get(key));
+    } catch (Exception e) {
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public void remove(String key) {
+    map.remove(key);
   }
 
   @Override
@@ -70,5 +97,10 @@ public class MemoryCrateMeta implements CrateMeta {
       memoryCrateMeta.set(key, objectOptional.get());
     }
     return memoryCrateMeta;
+  }
+
+  @Override
+  public String toString() {
+    return "MemoryCrateMeta{" + "map=" + map + '}';
   }
 }

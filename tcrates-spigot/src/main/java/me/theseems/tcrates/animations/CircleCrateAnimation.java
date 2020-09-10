@@ -1,19 +1,21 @@
 package me.theseems.tcrates.animations;
 
 import com.gmail.filoghost.holographicdisplays.api.Hologram;
+import fr.mrmicky.fastparticle.FastParticle;
+import fr.mrmicky.fastparticle.ParticleType;
 import me.theseems.tcrates.Crate;
 import me.theseems.tcrates.CrateAnimation;
 import me.theseems.tcrates.TCratesAPI;
 import me.theseems.tcrates.TCratesPlugin;
 import me.theseems.tcrates.animations.circle.CircleRoll;
 import me.theseems.tcrates.utils.Utils;
-import org.bukkit.Bukkit;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Particle;
+import org.bukkit.*;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.FireworkMeta;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,8 +24,8 @@ import java.util.function.Function;
 public class CircleCrateAnimation implements CrateAnimation, Listener {
 
   static class GrabStorage {
-    private Queue<Integer> integers;
-    private Collection<Integer> original;
+    private final Queue<Integer> integers;
+    private final Collection<Integer> original;
 
     public Integer take() {
       if (isEmpty()) return null;
@@ -49,8 +51,8 @@ public class CircleCrateAnimation implements CrateAnimation, Listener {
     }
   }
 
-  private Map<UUID, GrabStorage> rewardMap;
-  private Map<UUID, CircleRoll> players;
+  private final Map<UUID, GrabStorage> rewardMap;
+  private final Map<UUID, CircleRoll> players;
 
   public CircleCrateAnimation() {
     players = new ConcurrentHashMap<>();
@@ -62,7 +64,10 @@ public class CircleCrateAnimation implements CrateAnimation, Listener {
     Crate crate = TCratesAPI.getCrateManager().get(circleRoll.getCrateName());
     rewardMap.put(
         circleRoll.getPlayer(),
-        new GrabStorage(crate.getRewardContainer().generate(circleRoll.getPlayer())));
+        new GrabStorage(
+            crate
+                .getRewardContainer()
+                .generate(circleRoll.getPlayer(), circleRoll.getCrate().getMeta())));
   }
 
   private void generateTick(CircleRoll circleRoll) {
@@ -77,9 +82,13 @@ public class CircleCrateAnimation implements CrateAnimation, Listener {
 
   private void removeState(CircleRoll circleRoll) {
     for (Hologram stand : circleRoll.getStands()) {
+      FastParticle.spawnParticle(
+          stand.getLocation().getWorld(),
+          ParticleType.REDSTONE,
+          stand.getLocation(),
+          5,
+          Color.fromRGB(0, 0, 0));
       stand.delete();
-      Objects.requireNonNull(stand.getWorld())
-          .spawnParticle(Particle.CLOUD, stand.getLocation(), 2, 0.1, 0.1, 0.1, 0.1);
     }
 
     circleRoll.getStands().clear();
@@ -100,30 +109,35 @@ public class CircleCrateAnimation implements CrateAnimation, Listener {
             circleRoll.getCrateName(),
             circleRoll.getPlayer(),
             rewardMap.get(circleRoll.getPlayer()).take());
+
     Hologram hologram = circleRoll.getStands().get(index);
-    for (int i = 0; i < 2; i++) hologram.removeLine(0);
+    for (int i = 0; i < hologram.size() + 1; i++) {
+      hologram.removeLine(0);
+    }
 
     hologram.appendItemLine(stack);
     hologram.appendTextLine(stack.getItemMeta().getDisplayName());
     hologram.appendTextLine(
         TCratesAPI.getCrateManager()
             .find(circleRoll.getCrateName())
-            .flatMap(
-                (Function<Crate, Optional<String>>) crate -> crate.getMeta().getString("win_line"))
+            .flatMap(crate -> crate.getMeta().getString("win_line"))
             .orElse("§6Выигрыш!"));
 
-    hologram
-        .getLocation()
-        .getWorld()
-        .spawnParticle(
-            Particle.REDSTONE,
-            hologram.getLocation().clone(),
-            1,
-            0.01,
-            0.01,
-            0.01,
-            0.001,
-            new Particle.DustOptions(Color.ORANGE, 6));
+    TCratesAPI.getCrateManager()
+        .find(circleRoll.getCrateName())
+        .ifPresent(
+            crate -> {
+              boolean isHere = crate.getMeta().get("geffesht").isPresent();
+              if (isHere) {
+                crate
+                    .getMeta()
+                    .set(
+                        "geffesht",
+                        crate.getMeta().get("geffesht").get()
+                            + " "
+                            + stack.getItemMeta().getDisplayName());
+              } else crate.getMeta().set("geffesht", stack.getItemMeta().getDisplayName());
+            });
   }
 
   private final int PULSE_PERIOD = 50;
@@ -215,5 +229,34 @@ public class CircleCrateAnimation implements CrateAnimation, Listener {
     roll.spawn();
 
     players.put(actual.getUniqueId(), roll);
+    crate.getMeta().set("geffesht", "");
+
+    if (crate.getMeta().getKeys().contains("firework")) {
+      for (int i = 0; i < 3; i++) {
+        Firework firework =
+            (Firework) actual.getWorld().spawnEntity(location[0], EntityType.FIREWORK);
+        FireworkMeta meta = firework.getFireworkMeta();
+        meta.setPower(crate.getMeta().getInteger("firework-power").orElse(0));
+        meta.addEffect(
+            FireworkEffect.builder()
+                .with(
+                    FireworkEffect.Type.valueOf(
+                        crate.getMeta().getString("firework-shape").orElse("BURST")))
+                .trail(crate.getMeta().get("firework-trail").isPresent())
+                .flicker(crate.getMeta().get("firework-flicker").isPresent())
+                .withFade(
+                    Color.fromRGB(
+                        crate.getMeta().getInteger("firework-fade-red").orElse(0),
+                        crate.getMeta().getInteger("firework-fade-green").orElse(0),
+                        crate.getMeta().getInteger("firework-fade-blue").orElse(0)))
+                .withColor(
+                    Color.fromRGB(
+                        crate.getMeta().getInteger("firework-red").orElse(0),
+                        crate.getMeta().getInteger("firework-green").orElse(0),
+                        crate.getMeta().getInteger("firework-blue").orElse(0)))
+                .build());
+        firework.setFireworkMeta(meta);
+      }
+    }
   }
 }

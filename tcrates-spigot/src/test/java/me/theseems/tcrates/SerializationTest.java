@@ -10,35 +10,35 @@ import me.theseems.tcrates.rewards.MoneyReward;
 import org.bukkit.inventory.ItemStack;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class SerializationTest {
   @Test
-  public void test() throws IOException {
+  public void test() {
+    System.out.println("theseems".matches(""));
     MemoryCrateMeta memoryCrateMeta = new MemoryCrateMeta();
     memoryCrateMeta.set("example", "anime is my love");
     memoryCrateMeta.set("test", true);
 
     CrateRewardConfig crateRewardConfig =
         new CrateRewardConfig(
-            10,
+            10D,
             "Anime",
-            new RewardIconConfig("STONE", "Welcome", new String[] {"first", "second", "third"}),
+            new RewardIconConfig(
+                "STONE", "Welcome", (short) 0, new String[] {"first", "second", "third"}),
             memoryCrateMeta,
             "none");
     List<CrateRewardConfig> crateRewardConfigList = new ArrayList<>();
 
     for (int i = 0; i < 3; i++) crateRewardConfigList.add(crateRewardConfig);
 
-    CrateConfig config =
-        new CrateConfig(memoryCrateMeta, crateRewardConfigList, "example", "circle", false);
+    CrateConfig config = new CrateConfig(memoryCrateMeta, crateRewardConfigList, "example");
 
     TCratesConfig config1 =
         new TCratesConfig(
-            new ArrayList<>() {
+            new ArrayList<CrateConfig>() {
               {
                 add(config);
               }
@@ -70,7 +70,7 @@ public class SerializationTest {
         };
 
     reward.getMeta().set("type", "money");
-    probabilityRewardContainer.addReward(100, reward);
+    probabilityRewardContainer.addReward(100D, reward);
     crate.setRewardContainer(probabilityRewardContainer);
 
     TCratesAPI.setCrateManager(new SimpleCrateManager());
@@ -79,7 +79,6 @@ public class SerializationTest {
     memoryCrateMeta.set("example-2", "anime");
     crate.setCrateMeta(memoryCrateMeta);
 
-    System.out.println(
-        new GsonBuilder().setPrettyPrinting().create().toJson(crate));
+    System.out.println(new GsonBuilder().setPrettyPrinting().create().toJson(crate));
   }
 }

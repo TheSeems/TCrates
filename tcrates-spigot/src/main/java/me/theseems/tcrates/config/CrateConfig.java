@@ -7,40 +7,31 @@ import me.theseems.tcrates.requirements.KeyRequirement;
 import me.theseems.tcrates.rewards.CrateReward;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 public class CrateConfig {
+  private String name;
   private MemoryCrateMeta meta;
   private List<CrateRewardConfig> rewardList;
-  private String name;
-  private String animation;
 
-  public CrateConfig(
-      MemoryCrateMeta meta,
-      List<CrateRewardConfig> rewardList,
-      String name,
-      String animation,
-      boolean needKeys) {
+  public CrateConfig(MemoryCrateMeta meta, List<CrateRewardConfig> rewardList, String name) {
     this.meta = meta;
     this.rewardList = rewardList;
     this.name = name;
-    this.animation = animation;
   }
 
   public Crate makeCrate() {
-    if (!Objects.equals(animation, "circle")) {
-      throw new IllegalStateException("Animations other than 'circle' are not supported");
-    }
-
     CrateAnimation animation = new CircleCrateAnimation();
     SimpleCrate crate = new SimpleCrate(name);
 
     ProbabilityRewardContainer rewardContainer = new ProbabilityRewardContainer();
     for (CrateRewardConfig crateRewardConfig : rewardList) {
       Optional<CrateReward> reward = TCratesSpigotApi.getManager().make(crateRewardConfig);
-      if (!reward.isPresent()) continue;
+      if (!reward.isPresent()) {
+        System.err.println(
+            "Cannot form reward for crate '" + name + "': " + crateRewardConfig.getName());
+        continue;
+      }
 
       rewardContainer.addReward(crateRewardConfig.getProbability(), reward.get());
     }
@@ -76,13 +67,5 @@ public class CrateConfig {
 
   public void setName(String name) {
     this.name = name;
-  }
-
-  public String getAnimation() {
-    return animation;
-  }
-
-  public void setAnimation(String animation) {
-    this.animation = animation;
   }
 }

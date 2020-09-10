@@ -10,6 +10,9 @@ public interface CrateMeta {
   Optional<Integer> getInteger(String key);
   Optional<Double> getDouble(String key);
   Optional<String> getString(String key);
+  Optional<Boolean> getBoolean(String key);
+
+  void remove(String key);
 
 
   Collection<String> getKeys();

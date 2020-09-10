@@ -2,15 +2,19 @@ package me.theseems.tcrates.animations.circle;
 
 import com.gmail.filoghost.holographicdisplays.api.Hologram;
 import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
+import fr.mrmicky.fastparticle.FastParticle;
+import fr.mrmicky.fastparticle.ParticleType;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.theseems.tcrates.Crate;
 import me.theseems.tcrates.TCratesAPI;
 import me.theseems.tcrates.TCratesPlugin;
-import me.theseems.tcrates.animations.CircleCrateAnimation;
 import me.theseems.tcrates.rewards.CrateReward;
 import me.theseems.tcrates.rewards.CrateRewardContainer;
 import me.theseems.tcrates.rewards.IconReward;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -71,6 +75,7 @@ public class CircleRoll {
   private Color color;
 
   private double angle;
+  private double tetta;
   private double offset;
   private int size;
   private int ticks;
@@ -86,18 +91,23 @@ public class CircleRoll {
     this.crateName = crateName;
     this.center = center;
 
-    double speed = .1;
+    double speed =
+        TCratesAPI.getCrateManager().get(crateName).getMeta().getDouble("speed").orElse(.1);
     this.offset = 2D * Math.PI / size;
     this.ticks = 0;
     this.color = Color.WHITE;
 
-    angle = 2 * Math.PI * 10 / 20D; // the seconds for which the runnable has been running
+    angle =
+        2
+            * Math.PI
+            * TCratesAPI.getCrateManager().get(crateName).getMeta().getDouble("time").orElse(10D)
+            / 20D; // seconds for runnable to be ticking
     angle *= speed; // apply speed
   }
 
   public void spawn() {
     for (int i = stands.size(); i < size; i++) {
-      Location location = center.clone();
+      Location location = center.clone().add(0, getCrateDouble("offsetY", 0.5), 0);
       Hologram hologram = HologramsAPI.createHologram(TCratesPlugin.getPlugin(), location);
       ItemStack stack = createItemStack(crateName, player, i);
       hologram.appendItemLine(stack);
@@ -113,28 +123,38 @@ public class CircleRoll {
       double x = radius * Math.sin(angle);
       double y = radius * Math.cos(angle);
 
-      Location newLoc = center.clone().add(x, 0, y);
+      double offsetX = getCrateDouble("offsetX", 0);
+
+      x += offsetX;
+
+      Location newLoc = center.clone().add(x, getCrateDouble("offsetY", 0.5), y);
+
+      if (getCrateBool("spiral", false)) {
+        newLoc.setY(
+            center.clone().getY()
+                + getCrateDouble("offsetY", 0.5)
+                + getCrateDouble("spiral_multi", 1) * (Math.sin(angle + tetta)));
+      }
 
       // teleport to the new offset location
       stand.teleport(newLoc);
 
-      newLoc
-          .getWorld()
-          .spawnParticle(
-              Particle.REDSTONE,
-              stand.getLocation().clone().add(0, -0.5, 0),
-              CircleCrateAnimation.getIntProperty(this, "particle_count", 1),
-              CircleCrateAnimation.getDoubleProperty(this, "particle_v", .1),
-              CircleCrateAnimation.getDoubleProperty(this, "particle_v1", .1),
-              CircleCrateAnimation.getDoubleProperty(this, "particle_v2", .1),
-              CircleCrateAnimation.getDoubleProperty(this, "particle_v3", .1),
-              new Particle.DustOptions(
-                  color, CircleCrateAnimation.getIntProperty(this, "particle_size", 1)));
+      double red = getCrateDouble("dred", 1);
+      double green = getCrateDouble("dgreen", 1);
+      double blue = getCrateDouble("dblue", 1);
+
+      FastParticle.spawnParticle(
+          newLoc.getWorld(),
+          ParticleType.REDSTONE,
+          newLoc.clone().add(0, -0.5, 0),
+          1,
+          Color.fromRGB(((int) (255 * red)), ((int) (255 * green)), ((int) (255 * blue))));
 
       angle += offset; // Update angle
     }
 
-    angle += 1D / radius;
+    angle += 1D / radius * getCrateDouble("speed", 1);
+    tetta += 1D / radius * getCrateDouble("spiral_speed", 1);
   }
 
   public List<Hologram> getStands() {
@@ -163,6 +183,30 @@ public class CircleRoll {
 
   public Location getCenter() {
     return center;
+  }
+
+  public Crate getCrate() {
+    return TCratesAPI.getCrateManager()
+        .find(crateName)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Cannot find crate '" + crateName + "' for the circle crate animation!"));
+  }
+
+  private int getCrateInt(String key, int def) {
+    Optional<Crate> optionalCrate = TCratesAPI.getCrateManager().find(crateName);
+    return optionalCrate.map(crate -> crate.getMeta().getInteger(key).orElse(def)).orElse(def);
+  }
+
+  private boolean getCrateBool(String key, boolean def) {
+    Optional<Crate> optionalCrate = TCratesAPI.getCrateManager().find(crateName);
+    return (boolean) optionalCrate.map(crate -> crate.getMeta().get(key).orElse(def)).orElse(def);
+  }
+
+  private double getCrateDouble(String key, double def) {
+    Optional<Crate> optionalCrate = TCratesAPI.getCrateManager().find(crateName);
+    return optionalCrate.map(crate -> crate.getMeta().getDouble(key).orElse(def)).orElse(def);
   }
 
   public void setCenter(Location center) {

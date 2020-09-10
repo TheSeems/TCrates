@@ -1,7 +1,6 @@
 package me.theseems.tcrates.config;
 
 import me.theseems.tcrates.MemoryCrateMeta;
-import me.theseems.tcrates.TCratesPlugin;
 import me.theseems.tcrates.rewards.CrateReward;
 
 import java.util.Map;
@@ -26,17 +25,20 @@ public class CrateRewardConfigManager {
 
   public Optional<CrateReward> make(CrateRewardConfig crateConfig) {
     CrateReward reward;
-    if (!rewards.containsKey(crateConfig.getType())) {
-      TCratesPlugin.getPluginLogger()
-          .warning(
-              "Reward type '" + crateConfig.getType() + "' is not found. Consider changing it");
 
+    if (!rewards.containsKey(crateConfig.getType())) {
       reward = rewards.get("money").apply(crateConfig);
     } else {
       reward = rewards.get(crateConfig.getType()).apply(crateConfig);
     }
 
+
     reward.setMeta(new MemoryCrateMeta());
+
+    if (crateConfig.getOther() != null) {
+      reward.getMeta().set("__other", crateConfig.getOther());
+    }
+
     for (String key : crateConfig.getMeta().getKeys()) {
       Optional<Object> objectOptional = crateConfig.getMeta().get(key);
       if (!objectOptional.isPresent()) continue;

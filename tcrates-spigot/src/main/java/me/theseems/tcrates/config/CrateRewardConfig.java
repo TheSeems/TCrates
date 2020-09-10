@@ -3,13 +3,15 @@ package me.theseems.tcrates.config;
 import me.theseems.tcrates.MemoryCrateMeta;
 
 public class CrateRewardConfig {
-  private int probability;
   private String name;
+  private String type;
+  private Double probability;
   private RewardIconConfig icon;
   private MemoryCrateMeta meta;
-  private String type;
+  private RewardIconConfig other;
 
-  public CrateRewardConfig(int probability, String name, RewardIconConfig icon, MemoryCrateMeta meta, String type) {
+  public CrateRewardConfig(
+      Double probability, String name, RewardIconConfig icon, MemoryCrateMeta meta, String type) {
     this.probability = probability;
     this.name = name;
     this.icon = icon;
@@ -17,11 +19,21 @@ public class CrateRewardConfig {
     this.type = type;
   }
 
-  public int getProbability() {
+  public CrateRewardConfig(
+          Double probability, String name, RewardIconConfig icon, MemoryCrateMeta meta, String type, RewardIconConfig other) {
+    this.probability = probability;
+    this.name = name;
+    this.icon = icon;
+    this.meta = meta;
+    this.type = type;
+    this.other = other;
+  }
+
+  public Double getProbability() {
     return probability;
   }
 
-  public void setProbability(int probability) {
+  public void setProbability(Double probability) {
     this.probability = probability;
   }
 
@@ -35,6 +47,14 @@ public class CrateRewardConfig {
 
   public RewardIconConfig getIcon() {
     return icon;
+  }
+
+  public RewardIconConfig getOther() {
+    return other;
+  }
+
+  public void setOther(RewardIconConfig other) {
+    this.other = other;
   }
 
   public void setIcon(RewardIconConfig icon) {
